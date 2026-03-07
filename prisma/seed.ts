@@ -1,10 +1,7 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const prisma = new (PrismaClient as any)({
-  datasources: { db: { url: process.env.DATABASE_URL } },
-});
+const prisma = new PrismaClient();
 
 const dilemmas = [
   // Morality
@@ -69,7 +66,6 @@ const dilemmas = [
 ];
 
 async function main() {
-  // Skip if already seeded
   const existing = await prisma.dilemma.count();
   if (existing > 0) {
     console.log(`Database already has ${existing} dilemmas — skipping seed.`);
