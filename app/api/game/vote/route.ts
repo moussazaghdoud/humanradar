@@ -1,22 +1,22 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/db';
-
-export const dynamic = 'force-dynamic';
 import { calculateLevel, calculateAccuracy, checkNewBadges } from '@/lib/game/engine';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
-  const session = await getServerSession();
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { playerId, dilemmaId, predictedOption } = await req.json();
+
+  if (!playerId || !dilemmaId || !['a', 'b'].includes(predictedOption)) {
+    return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
   }
 
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
-  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-
-  const { dilemmaId, predictedOption } = await req.json();
-  if (!dilemmaId || !['a', 'b'].includes(predictedOption)) {
-    return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+  // Get or create anonymous player
+  let user = await prisma.user.findUnique({ where: { id: playerId } });
+  if (!user) {
+    user = await prisma.user.create({
+      data: { id: playerId, username: `Player_${playerId.slice(0, 6)}` },
+    });
   }
 
   // Get or create stats
@@ -33,7 +33,6 @@ export async function POST(req: Request) {
         totalVotes: { increment: 1 },
       },
     });
-    // Recompute majority
     stats = await prisma.dilemmaStats.update({
       where: { dilemmaId },
       data: { majorityOption: stats.votesA >= stats.votesB ? 'a' : 'b' },

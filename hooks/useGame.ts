@@ -47,12 +47,15 @@ export function useGame(userId: string | null) {
   }, [recentDilemmaIds]);
 
   const loadProfile = useCallback(async () => {
-    const res = await fetch('/api/profile');
+    if (!userId) return;
+    const res = await fetch('/api/profile', {
+      headers: { 'x-player-id': userId },
+    });
     if (res.ok) {
       const data = await res.json();
       setUserStats({ score: data.score, streak: data.streak, accuracy: data.accuracy, level: data.level });
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     if (userId) {
@@ -67,7 +70,7 @@ export function useGame(userId: string | null) {
     const res = await fetch('/api/game/vote', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dilemmaId: dilemma.id, predictedOption: option }),
+      body: JSON.stringify({ playerId: userId, dilemmaId: dilemma.id, predictedOption: option }),
     });
 
     if (!res.ok) return;
@@ -94,7 +97,6 @@ export function useGame(userId: string | null) {
   // Build a user-like object for ScoreBar
   const user = userStats ? {
     id: userId ?? '',
-    email: '',
     username: '',
     score: userStats.score,
     accuracy: userStats.accuracy,

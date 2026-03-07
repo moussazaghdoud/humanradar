@@ -1,22 +1,23 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  const session = await getServerSession();
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+export async function GET(req: Request) {
+  const playerId = req.headers.get('x-player-id');
+  if (!playerId) return NextResponse.json({ error: 'Missing player ID' }, { status: 400 });
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
+  let user = await prisma.user.findUnique({
+    where: { id: playerId },
     include: { badges: { orderBy: { earnedAt: 'desc' } } },
   });
 
-  if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (!user) {
+    user = await prisma.user.create({
+      data: { id: playerId, username: `Player_${playerId.slice(0, 6)}` },
+      include: { badges: { orderBy: { earnedAt: 'desc' } } },
+    });
+  }
 
-  const { password: _, ...profile } = user;
-  return NextResponse.json(profile);
+  return NextResponse.json(user);
 }

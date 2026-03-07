@@ -6,7 +6,7 @@ import LeaderboardView from '@/components/leaderboard/LeaderboardView';
 import type { User } from '@/types';
 
 export default function LeaderboardPage() {
-  const { user: authUser } = useAuth();
+  const { playerId } = useAuth();
   const [players, setPlayers] = useState<User[]>([]);
 
   useEffect(() => {
@@ -15,7 +15,7 @@ export default function LeaderboardPage() {
 
   return (
     <main className="min-h-screen px-4 pt-8">
-      <LeaderboardView players={players} currentUserId={authUser?.id ?? null} />
+      <LeaderboardView players={players} currentUserId={playerId} />
     </main>
   );
 }

@@ -5,12 +5,12 @@ import { useAuth } from '@/hooks/useAuth';
 import DilemmaCard from '@/components/game/DilemmaCard';
 import ResultCard from '@/components/game/ResultCard';
 import ScoreBar from '@/components/game/ScoreBar';
-import AuthGate from '@/components/ui/AuthGate';
 
 export default function PlayPage() {
-  const { user: authUser, loading: authLoading } = useAuth();
+  const { playerId, loading } = useAuth();
+  const { phase, dilemma, result, user, newBadges, predict, next } = useGame(playerId);
 
-  if (authLoading) {
+  if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center">
         <div className="text-white/30 animate-pulse">Loading...</div>
@@ -18,19 +18,8 @@ export default function PlayPage() {
     );
   }
 
-  if (!authUser) {
-    return <AuthGate />;
-  }
-
-  return <GameScreen userId={authUser.id} />;
-}
-
-function GameScreen({ userId }: { userId: string }) {
-  const { phase, dilemma, result, user, newBadges, predict, next } = useGame(userId);
-
   return (
     <main className="min-h-screen flex flex-col items-center px-4 pt-6">
-      {/* Background glow */}
       <div className="fixed inset-0 -z-10">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full bg-violet-600/15 blur-[100px]" />
       </div>
