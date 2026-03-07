@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { fetchUserProfile, fetchUserBadges } from '@/lib/supabase/queries';
 import ProfileView from '@/components/profile/ProfileView';
 import AuthGate from '@/components/ui/AuthGate';
 import Button from '@/components/ui/Button';
@@ -15,8 +14,10 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!authUser) return;
-    fetchUserProfile(authUser.id).then(setProfile);
-    fetchUserBadges(authUser.id).then(setBadges);
+    fetch('/api/profile').then(r => r.json()).then(data => {
+      setProfile(data);
+      setBadges(data.badges ?? []);
+    });
   }, [authUser]);
 
   if (authLoading) {

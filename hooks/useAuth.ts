@@ -1,52 +1,35 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase/client';
-import { upsertUser } from '@/lib/supabase/queries';
-import type { Session } from '@supabase/supabase-js';
+import { useSession, signIn, signOut } from 'next-auth/react';
 
 export function useAuth() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session?.user) {
-        upsertUser({
-          id: session.user.id,
-          email: session.user.email ?? '',
-          username: session.user.email?.split('@')[0] ?? 'player',
-        });
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const { data: session, status } = useSession();
+  const loading = status === 'loading';
+  const user = session?.user as { id?: string; email?: string; name?: string } | undefined;
 
   const signInWithEmail = async (email: string, password: string) => {
-    return supabase.auth.signInWithPassword({ email, password });
+    const res = await signIn('credentials', { email, password, redirect: false });
+    return { error: res?.error ? { message: res.error } : null };
   };
 
-  const signUp = async (email: string, password: string) => {
-    return supabase.auth.signUp({ email, password });
-  };
+  const signUpAndIn = async (email: string, password: string) => {
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { error: { message: data.error } };
 
-  const signOut = async () => {
-    return supabase.auth.signOut();
+    return signInWithEmail(email, password);
   };
 
   return {
     session,
-    user: session?.user ?? null,
+    user: user ? { id: user.id ?? '', email: user.email ?? '', name: user.name ?? '' } : null,
     loading,
     signInWithEmail,
-    signUp,
-    signOut,
+    signUp: signUpAndIn,
+    signOut: () => signOut({ redirect: false }),
   };
 }

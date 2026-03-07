@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  username  String
+  password  String
+  score     Int      @default(0)
+  accuracy  Int      @default(0)
+  streak    Int      @default(0)
+  level     Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  votes  Vote[]
+  badges Badge[]
+
+  @@map("users")
+}
+
+model Dilemma {
+  id        String   @id @default(uuid())
+  question  String
+  optionA   String   @map("option_a")
+  optionB   String   @map("option_b")
+  category  String   @default("morality")
+  difficulty Int     @default(1)
+  status    String   @default("active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  votes Vote[]
+  stats DilemmaStats?
+
+  @@map("dilemmas")
+}
+
+model Vote {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  dilemmaId       String   @map("dilemma_id")
+  predictedOption String   @map("predicted_option")
+  actualMajority  String?  @map("actual_majority")
+  isCorrect       Boolean? @map("is_correct")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dilemma Dilemma @relation(fields: [dilemmaId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dilemmaId])
+  @@map("votes")
+}
+
+model DilemmaStats {
+  dilemmaId      String @id @map("dilemma_id")
+  votesA         Int    @default(0) @map("votes_a")
+  votesB         Int    @default(0) @map("votes_b")
+  totalVotes     Int    @default(0) @map("total_votes")
+  majorityOption String @default("a") @map("majority_option")
+
+  dilemma Dilemma @relation(fields: [dilemmaId], references: [id], onDelete: Cascade)
+
+  @@map("dilemma_stats")
+}
+
+model Badge {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  badgeName String   @map("badge_name")
+  earnedAt  DateTime @default(now()) @map("earned_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeName])
+  @@map("badges")
+}
