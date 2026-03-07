@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import DilemmaCard from '@/components/game/DilemmaCard';
 import ResultCard from '@/components/game/ResultCard';
 import ScoreBar from '@/components/game/ScoreBar';
+import Button from '@/components/ui/Button';
 
 export default function PlayPage() {
   const { playerId, loading } = useAuth();
@@ -29,6 +30,13 @@ export default function PlayPage() {
       <div className="flex-1 flex items-center justify-center w-full py-8">
         {phase === 'loading' && (
           <div className="text-white/30 animate-pulse">Loading...</div>
+        )}
+
+        {phase === 'error' && (
+          <div className="text-center space-y-4">
+            <p className="text-red-400">Could not load dilemma. Is the database connected?</p>
+            <Button onClick={next} variant="secondary">Retry</Button>
+          </div>
         )}
 
         {phase === 'playing' && dilemma && (

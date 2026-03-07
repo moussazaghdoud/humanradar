@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Dilemma, GameResult } from '@/types';
 
-export type GamePhase = 'loading' | 'playing' | 'result';
+export type GamePhase = 'loading' | 'playing' | 'result' | 'error';
 
 interface UserStats {
   score: number;
@@ -25,35 +25,46 @@ export function useGame(userId: string | null) {
     setResult(null);
     setNewBadges([]);
 
-    const res = await fetch('/api/game/dilemma', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ excludeIds: recentDilemmaIds.slice(-20) }),
-    });
-    const data = await res.json();
-
-    if (!data) {
-      setRecentDilemmaIds([]);
-      const retry = await fetch('/api/game/dilemma', {
+    try {
+      const res = await fetch('/api/game/dilemma', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ excludeIds: [] }),
+        body: JSON.stringify({ excludeIds: recentDilemmaIds.slice(-20) }),
       });
-      setDilemma(await retry.json());
-    } else {
-      setDilemma(data);
+
+      if (!res.ok) { setPhase('error'); return; }
+      const data = await res.json();
+
+      if (!data) {
+        setRecentDilemmaIds([]);
+        const retry = await fetch('/api/game/dilemma', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ excludeIds: [] }),
+        });
+        if (!retry.ok) { setPhase('error'); return; }
+        setDilemma(await retry.json());
+      } else {
+        setDilemma(data);
+      }
+      setPhase('playing');
+    } catch {
+      setPhase('error');
     }
-    setPhase('playing');
   }, [recentDilemmaIds]);
 
   const loadProfile = useCallback(async () => {
     if (!userId) return;
-    const res = await fetch('/api/profile', {
-      headers: { 'x-player-id': userId },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setUserStats({ score: data.score, streak: data.streak, accuracy: data.accuracy, level: data.level });
+    try {
+      const res = await fetch('/api/profile', {
+        headers: { 'x-player-id': userId },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUserStats({ score: data.score, streak: data.streak, accuracy: data.accuracy, level: data.level });
+      }
+    } catch {
+      // Profile load failed — non-critical, continue
     }
   }, [userId]);
 
@@ -67,34 +78,37 @@ export function useGame(userId: string | null) {
   const predict = useCallback(async (option: 'a' | 'b') => {
     if (!dilemma || !userId || phase !== 'playing') return;
 
-    const res = await fetch('/api/game/vote', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ playerId: userId, dilemmaId: dilemma.id, predictedOption: option }),
-    });
+    try {
+      const res = await fetch('/api/game/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId: userId, dilemmaId: dilemma.id, predictedOption: option }),
+      });
 
-    if (!res.ok) return;
-    const data = await res.json();
+      if (!res.ok) return;
+      const data = await res.json();
 
-    const gameResult: GameResult = {
-      isCorrect: data.isCorrect,
-      predictedOption: data.predictedOption,
-      majorityOption: data.majorityOption,
-      percentA: data.percentA,
-      percentB: data.percentB,
-      pointsEarned: data.pointsEarned,
-      newStreak: data.newStreak,
-      streakBonus: data.streakBonus,
-    };
+      const gameResult: GameResult = {
+        isCorrect: data.isCorrect,
+        predictedOption: data.predictedOption,
+        majorityOption: data.majorityOption,
+        percentA: data.percentA,
+        percentB: data.percentB,
+        pointsEarned: data.pointsEarned,
+        newStreak: data.newStreak,
+        streakBonus: data.streakBonus,
+      };
 
-    setResult(gameResult);
-    setRecentDilemmaIds(prev => [...prev, dilemma.id]);
-    setUserStats(data.user);
-    if (data.newBadges?.length > 0) setNewBadges(data.newBadges);
-    setPhase('result');
+      setResult(gameResult);
+      setRecentDilemmaIds(prev => [...prev, dilemma.id]);
+      setUserStats(data.user);
+      if (data.newBadges?.length > 0) setNewBadges(data.newBadges);
+      setPhase('result');
+    } catch {
+      // Vote failed silently
+    }
   }, [dilemma, userId, phase]);
 
-  // Build a user-like object for ScoreBar
   const user = userStats ? {
     id: userId ?? '',
     username: '',
