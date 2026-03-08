@@ -62,7 +62,7 @@ export default function ProfileView({ user, badges }: ProfileViewProps) {
         ) : (
           <div className="flex flex-wrap gap-2">
             {badges.map(b => (
-              <BadgeDisplay key={b.id} name={b.badge_name} />
+              <BadgeDisplay key={b.id} name={b.badgeName} />
             ))}
           </div>
         )}

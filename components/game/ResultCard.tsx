@@ -30,7 +30,7 @@ export default function ResultCard({ result, dilemma, newBadges, onNext }: Resul
             : 'border-white/10 bg-white/5'
         }`}>
           <div className="flex justify-between items-center mb-2">
-            <span className="text-white font-medium text-sm">{dilemma.option_a}</span>
+            <span className="text-white font-medium text-sm">{dilemma.optionA}</span>
             {result.majorityOption === 'a' && (
               <span className="text-xs text-emerald-400 font-semibold">MAJORITY</span>
             )}
@@ -47,7 +47,7 @@ export default function ResultCard({ result, dilemma, newBadges, onNext }: Resul
             : 'border-white/10 bg-white/5'
         }`}>
           <div className="flex justify-between items-center mb-2">
-            <span className="text-white font-medium text-sm">{dilemma.option_b}</span>
+            <span className="text-white font-medium text-sm">{dilemma.optionB}</span>
             {result.majorityOption === 'b' && (
               <span className="text-xs text-emerald-400 font-semibold">MAJORITY</span>
             )}

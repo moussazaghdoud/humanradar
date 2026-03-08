@@ -116,7 +116,7 @@ export function useGame(userId: string | null) {
     accuracy: userStats.accuracy,
     streak: userStats.streak,
     level: userStats.level,
-    created_at: '',
+    createdAt: '',
   } : null;
 
   return {

@@ -31,7 +31,7 @@ export default function DilemmaCard({ dilemma, onPredict, disabled }: DilemmaCar
             active:scale-[0.97] transition-all duration-200
             disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {dilemma.option_a}
+          {dilemma.optionA}
         </button>
 
         <button
@@ -43,7 +43,7 @@ export default function DilemmaCard({ dilemma, onPredict, disabled }: DilemmaCar
             active:scale-[0.97] transition-all duration-200
             disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {dilemma.option_b}
+          {dilemma.optionB}
         </button>
       </div>
     </div>
